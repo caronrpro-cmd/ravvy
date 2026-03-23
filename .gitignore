@@ -1,0 +1,33 @@
+# Dépendances
+node_modules/
+.expo/
+
+# Environnement
+.env
+.env.local
+
+# Uploads locaux
+uploads/
+
+# Backups et fichiers parasites
+partysync-backup-20mars/
+partysync-backup-21mars/
+*.png
+*.jpg
+*.mp3
+*.dmg
+codebase_export.txt
+192.168.1.71.png
+"Install League of Legends na.app"
+Error.png
+todo.md
+design.md
+partysync-analyse-et-prompts-claude-code.md
+
+# OS
+.DS_Store
+.localized
+
+# Build
+dist/
+build/

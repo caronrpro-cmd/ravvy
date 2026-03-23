@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1773167729908,
+      "tag": "0000_peaceful_hellion",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1773967050972,
+      "tag": "0001_concerned_invisible_woman",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1774103328585,
+      "tag": "0002_secret_machine_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1774103446450,
+      "tag": "0003_dusty_venom",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1774104846691,
+      "tag": "0004_overrated_killmonger",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1742558400000,
+      "tag": "0005_friendship_bidirectional",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1742644800000,
+      "tag": "0006_indexes",
+      "breakpoints": true
+    }
+  ]
+}

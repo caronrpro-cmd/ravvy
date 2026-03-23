@@ -1,0 +1,12 @@
+resources:
+    screen_install: install.png
+    screen_install_muted: install_muted.png
+    install_logo: logo.png
+    text_underline_m: TextUnderlineM.png
+light_theme: false
+colors:
+    primary: [200, 155, 60]
+    error: [217, 80, 229]
+    error_secondary: [145, 53, 153]
+properties:
+    logo: [41, 120]
