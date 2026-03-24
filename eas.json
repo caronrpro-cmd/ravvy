@@ -33,10 +33,10 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "VOTRE_APPLE_ID",
-        "ascAppId": "VOTRE_ASC_APP_ID",
-        "appleTeamId": "VOTRE_TEAM_ID"
-      },
+  "appleId": "caronr.pro@gmail.com",
+  "ascAppId": "6761053978",
+  "appleTeamId": "9X6SQF3LM9"
+}
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
         "track": "internal"
