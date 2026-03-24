@@ -1,3 +1,4 @@
+cat > ~/Downloads/eas.json << 'EOF'
 {
   "$schema": "https://raw.githubusercontent.com/expo/eas-cli/main/packages/eas-cli/schema/eas.schema.json",
   "cli": {
@@ -30,16 +31,18 @@
       }
     }
   },
-"submit": {
-  "production": {
-    "ios": {
-      "appleId": "caronr.pro@gmail.com",
-      "ascAppId": "6761053978",
-      "appleTeamId": "9X6SQF3LM9"
-    },
-    "android": {
-      "serviceAccountKeyPath": "./google-service-account.json",
-      "track": "internal"
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "caronr.pro@gmail.com",
+        "ascAppId": "6761053978",
+        "appleTeamId": "9X6SQF3LM9"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "internal"
+      }
     }
   }
 }
+EOF
