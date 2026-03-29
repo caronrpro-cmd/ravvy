@@ -63,14 +63,15 @@ export async function loadState(): Promise<AppState> {
   }
 }
 
-export async function saveState(state: AppState): Promise<void> {
+export async function clearState(): Promise<void> {
   try {
-    const { profile, ...rest } = state;
-    // Profile dans SecureStore (chiffré)
-    await saveSecureProfile(profile);
-    // Reste de l'état dans AsyncStorage (pas de données sensibles)
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    if (Platform.OS === "web") {
+      localStorage.removeItem(SECURE_PROFILE_KEY);
+    } else {
+      await SecureStore.deleteItemAsync(SECURE_PROFILE_KEY).catch(() => {});
+    }
   } catch (e) {
-    console.warn("Failed to save state:", e);
+    console.warn("Failed to clear state:", e);
   }
 }
