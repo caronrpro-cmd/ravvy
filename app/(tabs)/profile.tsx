@@ -9,6 +9,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
+import { useQueryClient } from "@tanstack/react-query";
 
 const STATUS_OPTIONS = [
   { value: "available", label: "Disponible", color: "#10B981", emoji: "🟢" },
@@ -119,10 +120,13 @@ export default function ProfileScreen() {
     syncToBackend({ status: newStatus });
   };
 
-  const handleLogout = async () => {
-    await logout();
-    dispatch({ type: "LOGOUT" });
-  };
+  const queryClient = useQueryClient();
+
+const handleLogout = async () => {
+  await logout();
+  queryClient.clear();
+  dispatch({ type: "LOGOUT" });
+};
 
   return (
     <ScreenContainer>
