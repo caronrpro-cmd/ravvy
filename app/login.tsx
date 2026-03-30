@@ -133,7 +133,6 @@ export default function LoginScreen() {
   // const handleGoogleSignIn = async () => { ... };
 
   const handleContinueAsGuest = () => {
-    setLoading("guest");
     dispatch({
       type: "SET_PROFILE",
       payload: {
@@ -209,28 +208,6 @@ export default function LoginScreen() {
               )}
             </Pressable>
           )}
-
-          {/* TODO: Google Sign-In — activer avec EAS build natif */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              borderWidth: 1,
-              borderRadius: 12,
-              paddingVertical: 14,
-              opacity: 0.4,
-            }}
-          >
-            <Text style={{ fontSize: 18 }}>G</Text>
-            <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 15 }}>
-              Google (version finale)
-            </Text>
-          </View>
-        </View>
 
         {/* Divider */}
         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20, gap: 10 }}>

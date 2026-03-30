@@ -15,10 +15,12 @@ import { trpc } from "@/lib/trpc";
 export function useAuthSync() {
   const { state, dispatch } = useApp();
 
-  const profileQuery = trpc.profile.get.useQuery(undefined, {
-    retry: false,
-    staleTime: 60_000,
-  });
+  const isGuest = state.profile?.id?.startsWith("guest-");
+const profileQuery = trpc.profile.get.useQuery(undefined, {
+  retry: false,
+  staleTime: 60_000,
+  enabled: !isGuest,
+});
 
   // Populate app profile from backend user (on first load or after login)
   useEffect(() => {
@@ -46,7 +48,8 @@ export function useAuthSync() {
   useEffect(() => {
     if (!profileQuery.error) return;
     const code = (profileQuery.error as any)?.data?.code;
-    if (code === "UNAUTHORIZED" && state.profile) {
+    const isGuest = state.profile?.id?.startsWith("guest-");
+if (code === "UNAUTHORIZED" && state.profile && !isGuest) {
       dispatch({ type: "LOGOUT" });
     }
   }, [profileQuery.error]);
