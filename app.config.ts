@@ -95,14 +95,18 @@ const config: ExpoConfig = {
       },
     ],
     [
-      "expo-build-properties",
-      {
-        android: {
-          buildArchs: ["armeabi-v7a", "arm64-v8a"],
-          minSdkVersion: 24,
-        },
-      },
-    ],
+  	"expo-build-properties",
+ 	 {
+    		ios: {
+      newArchEnabled: false,
+    },
+    android: {
+      buildArchs: ["armeabi-v7a", "arm64-v8a"],
+      minSdkVersion: 24,
+      newArchEnabled: false,
+    },
+  },
+],
   ],
 extra: {
   eas: {
