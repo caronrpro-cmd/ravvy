@@ -208,6 +208,7 @@ export default function LoginScreen() {
               )}
             </Pressable>
           )}
+	</View>
 
         {/* Divider */}
         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20, gap: 10 }}>
