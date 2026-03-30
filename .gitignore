@@ -40,3 +40,5 @@ Install League of Legends na.app/
 
 expo-env.d.ts
 # @end expo-cli!assets/**
+*.ips
+*.ipa
