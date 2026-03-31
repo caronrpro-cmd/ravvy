@@ -30,11 +30,17 @@ import { useChatNotifications } from "@/hooks/use-chat-notifications";
 
 /** Runs inside the tRPC + QueryClient providers so hooks can call tRPC. */
 function AppSyncWrapper() {
-  useAuthSync();
-  useSyncBackend();
-  useGroupSync();
-  useChatNotifications();
-  const { isOffline, pendingCount } = useOfflineQueueSetup();
+  try { useAuthSync(); } catch (e) { console.error("[AppSync] useAuthSync error:", e); }
+  try { useSyncBackend(); } catch (e) { console.error("[AppSync] useSyncBackend error:", e); }
+  try { useGroupSync(); } catch (e) { console.error("[AppSync] useGroupSync error:", e); }
+  try { useChatNotifications(); } catch (e) { console.error("[AppSync] useChatNotifications error:", e); }
+  let isOffline = false;
+  let pendingCount = 0;
+  try {
+    const result = useOfflineQueueSetup();
+    isOffline = result.isOffline;
+    pendingCount = result.pendingCount;
+  } catch (e) { console.error("[AppSync] useOfflineQueueSetup error:", e); }
   return <OfflineBanner isOffline={isOffline} pendingCount={pendingCount} />;
 }
 
