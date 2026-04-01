@@ -5,9 +5,10 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
-import { Platform } from "react-native";
+import { Platform, useColorScheme } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
+import { ThemeProvider as NavigationThemeProvider, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { AppProvider } from "@/lib/app-provider";
 import {
   SafeAreaFrameContext,
@@ -98,10 +99,14 @@ export default function RootLayout() {
     };
   }, [initialInsets, initialFrame]);
 
+  const systemColorScheme = useColorScheme();
+  const navTheme = systemColorScheme === "dark" ? DarkTheme : DefaultTheme;
+
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
+          <NavigationThemeProvider value={navTheme}>
           <AppSyncWrapper />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
@@ -127,6 +132,7 @@ export default function RootLayout() {
             <Stack.Screen name="oauth/callback" />
           </Stack>
           <StatusBar style="auto" />
+          </NavigationThemeProvider>
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>
