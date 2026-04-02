@@ -75,3 +75,15 @@ export async function clearState(): Promise<void> {
     console.warn("Failed to clear state:", e);
   }
 }
+
+export async function saveState(state: AppState): Promise<void> {
+  try {
+    const { profile, ...rest } = state;
+    await Promise.all([
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(rest)),
+      saveSecureProfile(profile),
+    ]);
+  } catch (e) {
+    console.warn("Failed to save state:", e);
+  }
+}
