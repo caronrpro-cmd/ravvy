@@ -26,6 +26,19 @@ export default function CreateScreen() {
   const [type, setType] = useState<GroupType>("classic");
   const [expiresDate, setExpiresDate] = useState("");
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
+
+  const formatDate = (text: string) => {
+    const digits = text.replace(/[^0-9]/g, "").slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return digits.slice(0, 2) + "/" + digits.slice(2);
+    return digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4);
+  };
+
+  const formatTime = (text: string) => {
+    const digits = text.replace(/[^0-9]/g, "").slice(0, 4);
+    if (digits.length <= 2) return digits;
+    return digits.slice(0, 2) + ":" + digits.slice(2);
+  };
   const [selectedTemplate, setSelectedTemplate] = useState<PartyTemplate | null>(null);
 
   const toggleFriend = (id: string) => {
@@ -474,8 +487,10 @@ export default function CreateScreen() {
               <TextInput
                 placeholder="JJ/MM/AAAA"
                 placeholderTextColor={colors.muted}
+                keyboardType="number-pad"
+                maxLength={10}
                 value={date}
-                onChangeText={setDate}
+                onChangeText={(t) => setDate(formatDate(t))}
                 style={{
                   backgroundColor: colors.surface,
                   borderRadius: 12,
@@ -492,8 +507,10 @@ export default function CreateScreen() {
               <TextInput
                 placeholder="HH:MM"
                 placeholderTextColor={colors.muted}
+                keyboardType="number-pad"
+                maxLength={5}
                 value={time}
-                onChangeText={setTime}
+                onChangeText={(t) => setTime(formatTime(t))}
                 style={{
                   backgroundColor: colors.surface,
                   borderRadius: 12,
@@ -513,8 +530,10 @@ export default function CreateScreen() {
               <TextInput
                 placeholder="JJ/MM/AAAA (suppression auto)"
                 placeholderTextColor={colors.muted}
+                keyboardType="number-pad"
+                maxLength={10}
                 value={expiresDate}
-                onChangeText={setExpiresDate}
+                onChangeText={(t) => setExpiresDate(formatDate(t))}
                 style={{
                   backgroundColor: colors.surface,
                   borderRadius: 12,
