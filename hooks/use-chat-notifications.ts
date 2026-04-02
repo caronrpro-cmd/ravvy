@@ -39,7 +39,7 @@ export function useChatNotifications() {
           data: { module: "chat", groupId: lastMsg.groupId },
           sound: true,
         },
-        trigger: null as unknown as Notifications.NotificationTriggerInput,
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1 },
       });
     }
   }, [state.chatMessages.length]);
