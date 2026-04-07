@@ -19,6 +19,11 @@ export default function JoinByCodeScreen() {
   const joinByCode = trpc.groups.joinByCode.useMutation();
 
   const handleJoinGroup = async () => {
+if (state.profile?.id?.startsWith("guest-")) {
+      showError("Connectez-vous pour rejoindre un groupe");
+      router.push("/login");
+      return;
+    }	
     if (!code.trim()) {
       showError("Veuillez entrer un code d'invitation");
       return;

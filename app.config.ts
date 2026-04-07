@@ -13,7 +13,7 @@ const env = {
 const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
-  version: "1.0.1",
+  version: "1.0.2",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
@@ -22,7 +22,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: env.iosBundleId,
-    buildNumber: "1",
+    buildNumber: "2",
     usesAppleSignIn: true,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
@@ -76,6 +76,15 @@ const config: ExpoConfig = {
 "expo-web-browser",
     "expo-router",
     "expo-apple-authentication",
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/images/icon.png",
+        color: "#F59E0B",
+        iosDisplayInForeground: true,
+        mode: "production",
+      },
+    ],
     [
       "expo-audio",
       { microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone." },

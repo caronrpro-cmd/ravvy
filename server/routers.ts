@@ -316,16 +316,18 @@ export const appRouter = router({
           createdAt: new Date().toISOString(),
         });
         broadcastRefresh(input.groupId, "chat");
-        // Push notification aux autres membres du groupe
-        push.sendToGroup(
-          input.groupId,
-          {
-            title: ctx.user.name || "Nouveau message",
-            body: (input.text ?? "").substring(0, 100),
-            data: { type: "chat", groupId: String(input.groupId) },
-          },
-          ctx.user.id
-        ).catch(() => {});
+        // Push notification aux autres membres du groupe (async, non-bloquant)
+        db.getGroupById(input.groupId).then((group) => {
+          push.sendToGroup(
+            input.groupId,
+            {
+              title: group?.name || ctx.user.name || "Nouveau message",
+              body: `${ctx.user.name || "Quelqu'un"} : ${(input.text ?? "📷 Photo").substring(0, 100)}`,
+              data: { type: "chat", groupId: String(input.groupId), externalGroupId: group?.externalId ?? "" },
+            },
+            ctx.user.id
+          ).catch(() => {});
+        }).catch(() => {});
         return { success: true };
       }),
     pin: protectedProcedure
@@ -338,6 +340,20 @@ export const appRouter = router({
         await requireGroupAdmin(message.groupId, ctx.user.id);
         await db.pinMessage(input.messageId, input.pinned);
         return { success: true };
+      }),
+    markAsRead: protectedProcedure
+      .input(z.object({ groupId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await requireMember(input.groupId, ctx.user.id);
+        await db.markGroupChatRead(input.groupId, ctx.user.id);
+        return { success: true };
+      }),
+    unreadCount: protectedProcedure
+      .input(z.object({ groupId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        await requireMember(input.groupId, ctx.user.id);
+        const count = await db.getUnreadChatCount(input.groupId, ctx.user.id);
+        return { count };
       }),
   }),
 
@@ -826,10 +842,11 @@ export const appRouter = router({
 
         // Push notification — wrappé pour ne pas bloquer broadcastRefresh si push échoue
         try {
+          const group = await db.getGroupById(input.groupId);
           await push.sendToGroup(input.groupId, {
             title: `🆘 ${senderName} a besoin d'aide !`,
             body: `Alerte SOS déclenchée${locationInfo}`,
-            data: { type: "sos", groupId: String(input.groupId), senderId: String(ctx.user.id) },
+            data: { type: "sos", groupId: String(input.groupId), externalGroupId: group?.externalId ?? "", senderId: String(ctx.user.id) },
             priority: "high",
           });
         } catch (e) {

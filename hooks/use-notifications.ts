@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
+import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import { useApp, generateId } from "@/lib/app-provider";
+import { trpc } from "@/lib/trpc";
 import { logger } from "@/lib/logger";
 
 // Configure notification handler for foreground
@@ -18,18 +20,24 @@ Notifications.setNotificationHandler({
 });
 
 export function useNotifications() {
-  const { dispatch } = useApp();
+  const { state, dispatch } = useApp();
   const router = useRouter();
   const [expoPushToken, setExpoPushToken] = useState<string>("");
   const notificationListener = useRef<Notifications.EventSubscription>(undefined);
   const responseListener = useRef<Notifications.EventSubscription>(undefined);
 
+  const registerTokenMutation = trpc.push.register.useMutation();
+
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) => {
-      if (token) setExpoPushToken(token);
+      if (token) {
+        setExpoPushToken(token);
+        // Send token to backend so the server can push to this device
+        registerTokenMutation.mutate({ token, platform: Platform.OS });
+      }
     });
 
-    // Listen for incoming notifications
+    // Listen for incoming notifications (app in foreground)
     notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
       const { title, body, data } = notification.request.content;
       dispatch({
@@ -50,7 +58,20 @@ export function useNotifications() {
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;
       logger.debug("Notification tapped:", response.notification.request.identifier);
-      if (data?.groupId) {
+      if (data?.externalGroupId) {
+        router.push(`/group/${data.externalGroupId}` as any);
+      } else if (data?.groupId) {
+        router.push(`/group/${data.groupId}` as any);
+      }
+    });
+
+    // Handle notification tap when app was fully closed
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!response) return;
+      const data = response.notification.request.content.data;
+      if (data?.externalGroupId) {
+        router.push(`/group/${data.externalGroupId}` as any);
+      } else if (data?.groupId) {
         router.push(`/group/${data.groupId}` as any);
       }
     });
@@ -92,7 +113,10 @@ async function registerForPushNotificationsAsync(): Promise<string | undefined> 
       return undefined;
     }
     try {
-      const tokenData = await Notifications.getExpoPushTokenAsync();
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
+      const tokenData = await Notifications.getExpoPushTokenAsync(
+        projectId ? { projectId } : undefined
+      );
       token = tokenData.data;
     } catch (e) {
       logger.warn("[Notifications] Failed to get push token:", e);

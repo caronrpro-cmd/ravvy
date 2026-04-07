@@ -393,6 +393,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Load state on mount
   useEffect(() => {
     loadState().then(async (loaded) => {
+// Force logout guest profiles on every app launch
+      if (loaded.profile?.id?.startsWith("guest-")) {
+        const { clearState } = await import("./storage");
+        await clearState();
+        loaded = { ...loaded, profile: null, onboardingDone: false, groups: [], friends: [], friendRequests: [] };
+      }
       // On web: if profile wasn't persisted (debounce didn't fire before reload),
       // fall back to Auth.getUserInfo() stored in localStorage.
       if (!loaded.profile && Platform.OS === "web") {

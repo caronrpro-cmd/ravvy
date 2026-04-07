@@ -5,11 +5,11 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
-import { Platform, useColorScheme } from "react-native";
+import { Platform } from "react-native";
 import "@/lib/_core/nativewind-pressable";
-import { ThemeProvider } from "@/lib/theme-provider";
+import { ThemeProvider, useThemeContext } from "@/lib/theme-provider";
 import { ThemeProvider as NavigationThemeProvider, DefaultTheme, DarkTheme } from "@react-navigation/native";
-import { AppProvider } from "@/lib/app-provider";
+import { AppProvider, useApp } from "@/lib/app-provider";
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -28,6 +28,26 @@ import { useGroupSync } from "@/hooks/use-group-sync";
 import { useOfflineQueueSetup } from "@/hooks/use-offline-queue";
 import { OfflineBanner } from "@/components/offline-banner";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
+import { useNotifications } from "@/hooks/use-notifications";
+
+/** Bridges state.darkMode (AppProvider) → setColorScheme (ThemeProvider). */
+function ThemeSync() {
+  const { state } = useApp();
+  const { setColorScheme } = useThemeContext();
+  useEffect(() => {
+    if (state.darkMode !== null && state.darkMode !== undefined) {
+      setColorScheme(state.darkMode ? "dark" : "light");
+    }
+  }, [state.darkMode]);
+  return null;
+}
+
+/** Wraps NavigationThemeProvider so it follows ThemeContext (not just OS). */
+function NavThemeProvider({ children }: { children: React.ReactNode }) {
+  const { colorScheme } = useThemeContext();
+  const navTheme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
+  return <NavigationThemeProvider value={navTheme}>{children}</NavigationThemeProvider>;
+}
 
 /** Runs inside the tRPC + QueryClient providers so hooks can call tRPC. */
 function AppSyncWrapper() {
@@ -35,6 +55,7 @@ function AppSyncWrapper() {
   try { useSyncBackend(); } catch (e) { console.error("[AppSync] useSyncBackend error:", e); }
   try { useGroupSync(); } catch (e) { console.error("[AppSync] useGroupSync error:", e); }
   try { useChatNotifications(); } catch (e) { console.error("[AppSync] useChatNotifications error:", e); }
+  try { useNotifications(); } catch (e) { console.error("[AppSync] useNotifications error:", e); }
   let isOffline = false;
   let pendingCount = 0;
   try {
@@ -99,14 +120,12 @@ export default function RootLayout() {
     };
   }, [initialInsets, initialFrame]);
 
-  const systemColorScheme = useColorScheme();
-  const navTheme = systemColorScheme === "dark" ? DarkTheme : DefaultTheme;
-
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
-          <NavigationThemeProvider value={navTheme}>
+          <NavThemeProvider>
+          <ThemeSync />
           <AppSyncWrapper />
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
@@ -132,7 +151,7 @@ export default function RootLayout() {
             <Stack.Screen name="oauth/callback" />
           </Stack>
           <StatusBar style="auto" />
-          </NavigationThemeProvider>
+          </NavThemeProvider>
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>

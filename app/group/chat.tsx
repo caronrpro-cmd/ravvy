@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   Text, View, Pressable, TextInput, FlatList, KeyboardAvoidingView,
   Platform, ActivityIndicator, Alert, Image, RefreshControl, ScrollView,
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -29,6 +30,7 @@ export default function ChatScreen() {
   const { state, dispatch } = useApp();
   const colors = useColors();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const [message, setMessage] = useState("");
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
@@ -117,6 +119,21 @@ export default function ChatScreen() {
     }));
     dispatch({ type: "SET_GROUP_CHAT_MESSAGES", payload: { groupId: groupId!, messages: mapped } });
   }, [firstPage, groupId]);
+
+  const markAsReadMutation = trpc.chat.markAsRead.useMutation();
+
+  // Mark chat as read when screen is focused (clears the unread badge)
+  useFocusEffect(
+    useCallback(() => {
+      if (backendGroupId) {
+        markAsReadMutation.mutate({ groupId: backendGroupId });
+      }
+      // Also clear local chat notifications for this group
+      state.notifications
+        .filter((n) => n.type === "chat" && n.groupId === groupId && !n.read)
+        .forEach((n) => dispatch({ type: "MARK_NOTIFICATION_READ", payload: n.id }));
+    }, [backendGroupId, groupId])
+  );
 
   const { buildOptions } = useMutationWithToast();
   const sendMessageMutation = trpc.chat.send.useMutation(
@@ -220,7 +237,7 @@ export default function ChatScreen() {
     if (backendGroupId) {
       try {
         const formData = new FormData();
-        formData.append("photo", { uri: asset.uri, type: "image/jpeg", name: "chat.jpg" } as any);
+        formData.append("file", { uri: asset.uri, type: "image/jpeg", name: "chat.jpg" } as any);
         const uploadRes = await fetch(`${getApiBaseUrl()}/api/upload/photo`, {
           method: "POST",
           body: formData,
@@ -293,7 +310,7 @@ export default function ChatScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
       >
         {/* Header */}
         <View
@@ -560,7 +577,7 @@ export default function ChatScreen() {
             alignItems: "flex-end",
             paddingHorizontal: 12,
             paddingVertical: 8,
-            paddingBottom: Platform.OS === "web" ? 12 : 30,
+            paddingBottom: Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8),
             borderTopWidth: 0.5,
             borderTopColor: colors.border,
             backgroundColor: colors.background,

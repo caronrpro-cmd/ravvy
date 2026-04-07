@@ -1,4 +1,4 @@
-import { eq, and, desc, lt, inArray, isNull, or, like } from "drizzle-orm";
+import { eq, and, desc, lt, gt, inArray, isNull, or, like } from "drizzle-orm";
 import {
   parseJsonColumn, serializeJsonColumn,
   PollOption, pollOptionsSchema,
@@ -198,6 +198,13 @@ const pattern = `%${cleanQuery}%`;
     .limit(limit);
 }
 
+export async function getGroupById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(groups).where(eq(groups.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
 export async function getGroupByExternalId(externalId: string) {
   const db = await getDb();
   if (!db) return undefined;
@@ -366,6 +373,32 @@ export async function pinMessage(messageId: number, pinned: boolean) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(chatMessages).set({ isPinned: pinned }).where(eq(chatMessages.id, messageId));
+}
+
+// ===== CHAT READ RECEIPTS =====
+
+export async function markGroupChatRead(groupId: number, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(groupMembers)
+    .set({ lastReadAt: new Date() })
+    .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)));
+}
+
+export async function getUnreadChatCount(groupId: number, userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const member = await db.select({ lastReadAt: groupMembers.lastReadAt })
+    .from(groupMembers)
+    .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
+    .limit(1);
+  if (member.length === 0) return 0;
+  const lastReadAt = member[0].lastReadAt;
+  const condition = lastReadAt
+    ? and(eq(chatMessages.groupId, groupId), gt(chatMessages.createdAt, lastReadAt))
+    : eq(chatMessages.groupId, groupId);
+  const rows = await db.select({ id: chatMessages.id }).from(chatMessages).where(condition);
+  return rows.length;
 }
 
 // ===== PUSH TOKENS =====

@@ -58,6 +58,13 @@ export default function CreateScreen() {
   };
 
   const handleCreate = () => {
+if (state.profile?.id?.startsWith("guest-")) {
+      Alert.alert("Connexion requise", "Connectez-vous pour créer un groupe", [
+        { text: "Se connecter", onPress: () => router.push("/login") },
+        { text: "Annuler" },
+      ]);
+      return;
+    }
     if (!name.trim()) {
       if (Platform.OS === "web") alert("Veuillez entrer un nom pour le groupe");
       else Alert.alert("Erreur", "Veuillez entrer un nom pour le groupe");

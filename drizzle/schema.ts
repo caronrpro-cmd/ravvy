@@ -75,6 +75,7 @@ export const groupMembers = mysqlTable("group_members", {
   rsvp: mysqlEnum("rsvp", ["present", "absent", "maybe", "pending"]).default("pending").notNull(),
   role: mysqlEnum("memberRole", ["admin", "member"]).default("member").notNull(),
   joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+  lastReadAt: timestamp("lastReadAt"),
 }, (t) => [
   uniqueIndex("group_members_groupId_userId_uniq").on(t.groupId, t.userId),
 ]);
