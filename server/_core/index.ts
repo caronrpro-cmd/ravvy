@@ -171,6 +171,31 @@ async function startServer() {
     res.json({ ok: true, timestamp: Date.now() });
   });
 
+  // DEBUG TEMPORAIRE — lister le contenu du dossier uploads
+  app.get("/api/debug/uploads", (_req, res) => {
+    try {
+      const listDir = (dir: string): Record<string, any> => {
+        if (!fs.existsSync(dir)) return { exists: false };
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        const files: string[] = [];
+        const dirs: Record<string, any> = {};
+        for (const e of entries) {
+          if (e.isDirectory()) dirs[e.name] = listDir(path.join(dir, e.name));
+          else files.push(e.name);
+        }
+        return { exists: true, files, dirs };
+      };
+      res.json({
+        uploadsBase,
+        uploadsDir,
+        cwd: process.cwd(),
+        tree: listDir(uploadsBase),
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ===== SERVER-SENT EVENTS =====
 
   async function sseRoute(
