@@ -3,10 +3,14 @@ import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useApp, generateId } from "@/lib/app-provider";
 import { trpc } from "@/lib/trpc";
 import { logger } from "@/lib/logger";
+
+// Clé pour stocker l'ID de la dernière notif traitée au lancement
+const LAST_PROCESSED_NOTIF_KEY = "@ravvy_last_processed_notif_id";
 
 // Configure notification handler for foreground
 Notifications.setNotificationHandler({
@@ -47,7 +51,9 @@ export function useNotifications() {
           type: (data?.type as any) || "reminder",
           title: title || "Notification",
           message: body || "",
-          groupId: data?.groupId as string | undefined,
+          // Utilise externalGroupId (UUID) en priorité pour que le badge
+          // puisse être effacé dans chat.tsx via useLocalSearchParams
+          groupId: (data?.externalGroupId ?? data?.groupId) as string | undefined,
           read: false,
           createdAt: new Date().toISOString(),
         },
@@ -65,9 +71,16 @@ export function useNotifications() {
       }
     });
 
-    // Handle notification tap when app was fully closed
-    Notifications.getLastNotificationResponseAsync().then((response) => {
+    // Handle notification tap when app was fully closed.
+    // Stocke l'ID traité pour ne pas rejouer la navigation à chaque lancement.
+    Notifications.getLastNotificationResponseAsync().then(async (response) => {
       if (!response) return;
+      const notifId = response.notification.request.identifier;
+      try {
+        const lastId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIF_KEY);
+        if (lastId === notifId) return; // Déjà traité, on ignore
+        await AsyncStorage.setItem(LAST_PROCESSED_NOTIF_KEY, notifId);
+      } catch {}
       const data = response.notification.request.content.data;
       if (data?.externalGroupId) {
         router.push(`/group/${data.externalGroupId}` as any);

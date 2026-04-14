@@ -117,7 +117,11 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // ===== UPLOADS =====
-  const uploadsDir = path.join(process.cwd(), "uploads", "photos");
+  // UPLOADS_BASE peut pointer vers un Railway Volume (ex: /app/uploads)
+  // pour rendre les photos persistantes entre les redéploiements.
+  // Par défaut : process.cwd()/uploads (= /app/uploads sur Railway sans volume).
+  const uploadsBase = process.env.UPLOADS_BASE ?? path.join(process.cwd(), "uploads");
+  const uploadsDir = path.join(uploadsBase, "photos");
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
   const photoStorage = multer.diskStorage({
@@ -137,7 +141,7 @@ async function startServer() {
   });
 
   // Sert les fichiers uploadés en accès public
-  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+  app.use("/uploads", express.static(uploadsBase));
 
   // POST /api/upload/photo — reçoit un fichier multipart et retourne son URL publique
   app.post("/api/upload/photo", uploadPhoto.single("file"), (req, res) => {

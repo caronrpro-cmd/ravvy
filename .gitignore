@@ -42,3 +42,6 @@ expo-env.d.ts
 # @end expo-cli!assets/**
 *.ips
 *.ipa
+
+# Claude Code local settings
+.claude/
