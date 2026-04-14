@@ -44,6 +44,12 @@ export default function GroupHubScreen() {
   );
   const backendGroupId = backendGroupQuery.data?.id ?? null;
   const utils = trpc.useUtils();
+
+  const chatUnreadQuery = trpc.chat.unreadCount.useQuery(
+    { groupId: backendGroupId! },
+    { enabled: !!backendGroupId, staleTime: 30_000 }
+  );
+  const chatUnreadCount = chatUnreadQuery.data?.count ?? 0;
   const updateRsvpMutation = trpc.groups.updateRsvp.useMutation();
   const deleteGroupMutation = trpc.groups.delete.useMutation();
   const leaveGroupMutation = trpc.groups.leave.useMutation();
@@ -283,7 +289,7 @@ export default function GroupHubScreen() {
   };
 
   const modules = [
-    { icon: "bubble.left.fill" as const, label: "Chat", color: "#06B6D4", route: `/group/chat?groupId=${id}`, badge: groupMessages.length },
+    { icon: "bubble.left.fill" as const, label: "Chat", color: "#06B6D4", route: `/group/chat?groupId=${id}`, badge: chatUnreadCount },
     { icon: "cart.fill" as const, label: "Courses", color: "#10B981", route: `/group/shopping?groupId=${id}`, badge: 0 },
     { icon: "car.fill" as const, label: "Covoiturage", color: "#3B82F6", route: `/group/carpool?groupId=${id}`, badge: 0 },
     { icon: "photo.fill" as const, label: "Album", color: "#EC4899", route: `/group/album?groupId=${id}`, badge: 0 },

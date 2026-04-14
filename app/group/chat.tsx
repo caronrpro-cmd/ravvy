@@ -45,6 +45,7 @@ export default function ChatScreen() {
     { enabled: !!groupId, staleTime: Infinity }
   );
   const backendGroupId = backendGroupQuery.data?.id ?? null;
+  const utils = trpc.useUtils();
 
   const messagesInfiniteQuery = trpc.chat.messages.useInfiniteQuery(
     { groupId: backendGroupId ?? 0, limit: 50 },
@@ -120,7 +121,11 @@ export default function ChatScreen() {
     dispatch({ type: "SET_GROUP_CHAT_MESSAGES", payload: { groupId: groupId!, messages: mapped } });
   }, [firstPage, groupId]);
 
-  const markAsReadMutation = trpc.chat.markAsRead.useMutation();
+  const markAsReadMutation = trpc.chat.markAsRead.useMutation({
+    onSuccess: (_data, variables) => {
+      utils.chat.unreadCount.invalidate({ groupId: variables.groupId });
+    },
+  });
 
   // Mark chat as read when screen is focused (clears the unread badge)
   useFocusEffect(

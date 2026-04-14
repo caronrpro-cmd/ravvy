@@ -149,7 +149,13 @@ async function startServer() {
       res.status(400).json({ error: "Aucun fichier reçu" });
       return;
     }
-    const apiBase = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
+    // API_BASE_URL prioritaire, sinon Railway fournit RAILWAY_PUBLIC_DOMAIN automatiquement,
+    // sinon fallback localhost (dev). Évite les URL http://localhost stockées en DB sur Railway.
+    const apiBase =
+      process.env.API_BASE_URL ||
+      (process.env.RAILWAY_PUBLIC_DOMAIN
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+        : `http://localhost:${process.env.PORT || 3000}`);
     const url = `${apiBase}/uploads/photos/${req.file.filename}`;
     res.json({ url });
   });
@@ -171,32 +177,7 @@ async function startServer() {
     res.json({ ok: true, timestamp: Date.now() });
   });
 
-  // DEBUG TEMPORAIRE — lister le contenu du dossier uploads
-  app.get("/api/debug/uploads", (_req, res) => {
-    try {
-      const listDir = (dir: string): Record<string, any> => {
-        if (!fs.existsSync(dir)) return { exists: false };
-        const entries = fs.readdirSync(dir, { withFileTypes: true });
-        const files: string[] = [];
-        const dirs: Record<string, any> = {};
-        for (const e of entries) {
-          if (e.isDirectory()) dirs[e.name] = listDir(path.join(dir, e.name));
-          else files.push(e.name);
-        }
-        return { exists: true, files, dirs };
-      };
-      res.json({
-        uploadsBase,
-        uploadsDir,
-        cwd: process.cwd(),
-        tree: listDir(uploadsBase),
-      });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  // ===== SERVER-SENT EVENTS =====
+// ===== SERVER-SENT EVENTS =====
 
   async function sseRoute(
     req: express.Request,

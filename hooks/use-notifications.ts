@@ -29,6 +29,10 @@ export function useNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string>("");
   const notificationListener = useRef<Notifications.EventSubscription>(undefined);
   const responseListener = useRef<Notifications.EventSubscription>(undefined);
+  // Garde en mémoire les IDs traités dans cette session (évite la double navigation
+  // si addNotificationResponseReceivedListener ET getLastNotificationResponseAsync
+  // se déclenchent tous les deux sur un cold start).
+  const processedNotifIds = useRef<Set<string>>(new Set());
 
   const registerTokenMutation = trpc.push.register.useMutation();
 
@@ -60,10 +64,20 @@ export function useNotifications() {
       });
     });
 
-    // Listen for notification responses (user tapped) — deep link into the group
+    // Listen for notification responses (user tapped depuis le foreground ou background).
+    // Stocke aussi l'ID pour qu'au prochain cold start, getLastNotificationResponseAsync
+    // reconnaisse la notif comme déjà traitée et ne rejoue pas la navigation.
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      const notifId = response.notification.request.identifier;
+      logger.debug("[Notif] Response listener:", notifId);
+      // Déduplique si getLastNotificationResponseAsync a déjà traité cette notif (cold start)
+      if (processedNotifIds.current.has(notifId)) {
+        logger.debug("[Notif] Response listener: déjà traité, ignoré");
+        return;
+      }
+      processedNotifIds.current.add(notifId);
+      AsyncStorage.setItem(LAST_PROCESSED_NOTIF_KEY, notifId).catch(() => {});
       const data = response.notification.request.content.data;
-      logger.debug("Notification tapped:", response.notification.request.identifier);
       if (data?.externalGroupId) {
         router.push(`/group/${data.externalGroupId}` as any);
       } else if (data?.groupId) {
@@ -71,16 +85,30 @@ export function useNotifications() {
       }
     });
 
-    // Handle notification tap when app was fully closed.
-    // Stocke l'ID traité pour ne pas rejouer la navigation à chaque lancement.
+    // Handle notification tap when app was fully closed (cold start).
+    // Compare l'ID entrant avec le dernier ID persisté — skip si identique.
     Notifications.getLastNotificationResponseAsync().then(async (response) => {
       if (!response) return;
       const notifId = response.notification.request.identifier;
+
+      let lastId: string | null = null;
       try {
-        const lastId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIF_KEY);
-        if (lastId === notifId) return; // Déjà traité, on ignore
+        lastId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIF_KEY);
+      } catch (e) {
+        logger.warn("[Notif] AsyncStorage.getItem failed:", e);
+      }
+      logger.debug(`[Notif] Cold start: stored=${lastId} | incoming=${notifId} | match=${lastId === notifId}`);
+
+      if (lastId === notifId) return; // Déjà traité lors d'un lancement précédent
+      if (processedNotifIds.current.has(notifId)) return; // Déjà traité par le response listener ce lancement
+      processedNotifIds.current.add(notifId);
+
+      try {
         await AsyncStorage.setItem(LAST_PROCESSED_NOTIF_KEY, notifId);
-      } catch {}
+      } catch (e) {
+        logger.warn("[Notif] AsyncStorage.setItem failed:", e);
+      }
+
       const data = response.notification.request.content.data;
       if (data?.externalGroupId) {
         router.push(`/group/${data.externalGroupId}` as any);
